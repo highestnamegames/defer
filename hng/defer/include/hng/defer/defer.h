@@ -5,6 +5,7 @@
 //	Date:		28 Dec 2023
 //	Licence:	MIT
 //	GitHub:		https://github.com/highestnamegames/defer
+//	Version:	v1.1.0
 //
 //	Summary:
 //		Defers execution of statements to the end of the scope.
@@ -93,6 +94,16 @@ namespace hng {
 				return std::forward<F>(f)();
 			}
 
+			template<class T, typename EIF = std::enable_if_t<std::is_lvalue_reference_v<T>, void>>
+			T dt_return_forward(T value) noexcept {
+				return value;
+			}
+
+			template<class T, class U, typename EIF = std::enable_if_t<!std::is_lvalue_reference_v<T>, void>>
+			std::remove_reference_t<T> dt_return_forward(U&& value) noexcept(std::is_nothrow_constructible_v<std::decay_t<T>, U&&>) {
+				return T(std::move(value));
+			}
+
 		}
 	}
 }
@@ -119,7 +130,7 @@ namespace hng {
 
 
 #define HNG_DT_TRY\
-	);try{auto HNG_DT_try_fn=(
+	);try{auto DETAIL_HNG_DT_try_fn=(
 
 
 #define DETAIL_HNG_DT_END_INVOKE_FINALLY(trycaught)\
@@ -132,11 +143,11 @@ namespace hng {
 			try{\
 				::std::move(DETAIL_HNG_DT_finally)();\
 			}catch(...){\
-				::std::exception_ptr y=::std::current_exception();\
+				::std::exception_ptr DETAIL_HNG_DT_defer_block_exception=::std::current_exception();\
 				try{\
-					::std::rethrow_exception(std::move(DETAIL_HNG_DT_try_block_exception));\
+					::std::rethrow_exception(::std::move(DETAIL_HNG_DT_try_block_exception));\
 				}catch(...){\
-					::std::throw_with_nested(::hng::defer_exception(std::move(y)));\
+					::std::throw_with_nested(::hng::defer_exception(::std::move(DETAIL_HNG_DT_defer_block_exception)));\
 				}\
 			}\
 		}\
@@ -148,15 +159,21 @@ namespace hng {
 
 #define DETAIL_HNG_DT_END_TRY_STATEMENTS\
 	do{\
-		if constexpr(std::is_same_v<::std::decay_t<decltype(::std::move(HNG_DT_try_fn)())>,void>){\
-			::std::move(HNG_DT_try_fn)();\
+		using DETAIL_HNG_DT_try_fn_result_t=decltype(::std::move(DETAIL_HNG_DT_try_fn)());\
+		if constexpr(::std::is_same_v<::std::decay_t<DETAIL_HNG_DT_try_fn_result_t>,void>){\
+			::std::move(DETAIL_HNG_DT_try_fn)();\
 			DETAIL_HNG_DT_invoked=1;\
 			DETAIL_HNG_DT_END_INVOKE_FINALLY(0);\
+		}else if constexpr(::std::is_lvalue_reference_v<DETAIL_HNG_DT_try_fn_result_t>){\
+			DETAIL_HNG_DT_try_fn_result_t DETAIL_HNG_DT_result=::std::move(DETAIL_HNG_DT_try_fn)();\
+			DETAIL_HNG_DT_invoked=1;\
+			DETAIL_HNG_DT_END_INVOKE_FINALLY(0);\
+			return DETAIL_HNG_DT_result;\
 		}else{\
-			::std::decay_t<decltype(::std::move(HNG_DT_try_fn)())>HNG_DT_result=::std::move(HNG_DT_try_fn)();\
+			::std::decay_t<DETAIL_HNG_DT_try_fn_result_t>DETAIL_HNG_DT_result=::std::move(DETAIL_HNG_DT_try_fn)();\
 			DETAIL_HNG_DT_invoked=1;\
 			DETAIL_HNG_DT_END_INVOKE_FINALLY(0);\
-			return::std::move(HNG_DT_result);\
+			return DETAIL_HNG_DT_result;\
 		}\
 	}while(0)
 
@@ -164,11 +181,18 @@ namespace hng {
 
 #define DETAIL_HNG_DT_END_TRY_STATEMENTS\
 	do{\
-		::std::conditional_t<std::is_same_v<::std::decay_t<decltype(HNG_DT_try_fn())>,void>,int,::std::decay_t<decltype(HNG_DT_try_fn())>>\
-			HNG_DT_result=::hng::detail::defer::dt_invoke(std::move(HNG_DT_try_fn));\
+		using DETAIL_HNG_DT_try_fn_result_t=decltype(::std::move(DETAIL_HNG_DT_try_fn)());\
+		::std::conditional_t<\
+			::std::is_same_v<::std::decay_t<DETAIL_HNG_DT_try_fn_result_t>,void>,\
+			int,\
+			::std::conditional_t<\
+			::std::is_lvalue_reference_v<DETAIL_HNG_DT_try_fn_result_t>,\
+			DETAIL_HNG_DT_try_fn_result_t,\
+			::std::decay_t<DETAIL_HNG_DT_try_fn_result_t>\
+		>>DETAIL_HNG_DT_result=::hng::detail::defer::dt_invoke(::std::move(DETAIL_HNG_DT_try_fn));\
 		DETAIL_HNG_DT_invoked=1;\
 		DETAIL_HNG_DT_END_INVOKE_FINALLY(0);\
-		return ::std::move(HNG_DT_result);\
+		return ::hng::detail::defer::dt_return_forward<DETAIL_HNG_DT_try_fn_result_t>(DETAIL_HNG_DT_result);\
 	}while(0)
 
 #endif // ^^^^ !DETAIL_HNG_DEFER_HAS_CPP17

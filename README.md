@@ -71,39 +71,43 @@ HNG_DT_END;
 There can be nested blocks.
 
 ```cpp
-	HNG_DT_DEFER_FINALLY [&]
+HNG_DT_DEFER_FINALLY [&]
+{
+    HNG_DT_DEFER_FINALLY [&]
     {
-		HNG_DT_DEFER_FINALLY [&]
-        {
-			// 3. this executes third
-        }
-		HNG_DT_TRY [&]
-        {
-			// 2. this executes second
-        }
-		HNG_DT_END;
+        // 3. this executes third
     }
-	HNG_DT_TRY [&]
+    HNG_DT_TRY [&]
     {
-		// 1. this executes first
+        // 2. this executes second
     }
-	HNG_DT_END;
+    HNG_DT_END;
+}
+HNG_DT_TRY [&]
+{
+    // 1. this executes first
+}
+HNG_DT_END;
 ```
 
 HNG_DT_END must be followed by a semicolon.
 
-The defer block will still be executed if the try block returns early.
+The try block may return a value, because the HNG_DT construct is an expression.
 
 ```cpp
-    HNG_DT_DEFER_FINALLY [&]
-    {
-        // executed despite return statement.
-    }
-    HNG_DT_TRY [&]
-    {
-        return 0;
-    }
-    HNG_DT_END;
+int x = 0;
+int y = 1;
+y = HNG_DT_DEFER_FINALLY [&]
+{
+    // executed after the return statement in the try block.
+    x = y;
+}
+HNG_DT_TRY [&]
+{
+    return 2;
+}
+HNG_DT_END;
+assert(x == 1 && y == 2);
 ```
 
 ### defer class

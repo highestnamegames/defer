@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-project(defer_tests VERSION 1.0.1 LANGUAGES CXX)
+project(defer_tests VERSION 1.1.0 LANGUAGES CXX)
 add_subdirectory(hng/defer)
 add_executable(defer_tests src/main.cpp)
 

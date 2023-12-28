@@ -108,6 +108,57 @@ namespace hng {
                     return a == expected;
                 }
                 }); });
+            tests.emplace_back([] { return test("HNG_DT DEFER_FINALLY/TRY/END macros - expression return value", [](auto const& /*test_name*/) {
+                {
+                    int x = 0;
+                    int y = 1;
+                    y = HNG_DT_DEFER_FINALLY[&]
+                    {
+                        // executed after the return statement in the try block.
+                        x = y;
+                    }
+                        HNG_DT_TRY[&]
+                    {
+                        return 2;
+                    }
+                    HNG_DT_END;
+                    return x == 1 && y == 2;
+                }
+                }); });
+            tests.emplace_back([] { return test("HNG_DT DEFER_FINALLY/TRY/END macros - expression return value by move", [](auto const& /*test_name*/) {
+                {
+                    std::unique_ptr<int> x = std::make_unique<int>(3);
+                    int z = 1;
+                    std::unique_ptr<int> r = HNG_DT_DEFER_FINALLY[&]
+                    {
+                        // executed after the return statement in the try block.
+                        z = 2;
+                    }
+                        HNG_DT_TRY[&]() -> std::unique_ptr<int>&&
+                    {
+                        return std::move(x);
+                    }
+                    HNG_DT_END;
+                    return z == 2 && r && *r == 3;
+                }
+                }); });
+            tests.emplace_back([] { return test("HNG_DT DEFER_FINALLY/TRY/END macros - expression return value by reference", [](auto const& /*test_name*/) {
+                {
+                    std::unique_ptr<int> x = std::make_unique<int>(3);
+                    int z = 1;
+                    std::unique_ptr<int> const& r = HNG_DT_DEFER_FINALLY[&]
+                    {
+                        // executed after the return statement in the try block.
+                        z = 2;
+                    }
+                        HNG_DT_TRY[&]() -> std::unique_ptr<int>&
+                    {
+                        return (x);
+                    }
+                    HNG_DT_END;
+                    return z == 2 && r && *r == 3 && &r == &x;
+                }
+                }); });
             tests.emplace_back([] { return test("HNG_DT DEFER_FINALLY_PRESERVE/TRY/END macros - try block exception", [](auto const& /*test_name*/) {
                 {
                     int x = 1;
