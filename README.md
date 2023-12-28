@@ -56,14 +56,14 @@ For example, in Visual Studio on Windows
 ```cpp
 HNG_DT_DEFER_FINALLY [&]
 {
-	// This closure is always invoked,
+    // This closure is always invoked,
     // regardless of an exception thrown from the TRY block.
-	// If this block throws an exception, this block's exception is propagated
+    // If this block throws an exception, this block's exception is propagated
     // and the TRY block's exception will be lost.
 }
 HNG_DT_TRY [&]
 {
-	// Even if this block throws an exception, the DEFER block is executed.
+    // Even if this block throws an exception, the DEFER block is executed.
 }
 HNG_DT_END;
 ```
