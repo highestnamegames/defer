@@ -1,8 +1,6 @@
 # defer
 C++ header only library for deferred execution, useful for resource cleanup, ad-hoc RAII, and propagating exceptions from the deferred code block.
 
-## Features
-
 ## Installation
 This is a header only library. Copy the file `hng/defer/include/hng/defer/defer.h` into your project dependencies.
 
@@ -34,32 +32,24 @@ For example, in Visual Studio on Windows
     #include <hng/defer/defer.h>
 
     int main() {
-        int x = 2;
-        int* y = &x;
-        hng::nullsafety::notnull<int*> p = y;
-        std::cout << *p << std::endl;
-        // ^ prints "2".
-
-        //p = nullptr;
-        // ^ will not compile.
-
-        p = static_cast<int*>(nullptr);
-        // ^ throws a hng::nullsafety::nullptr_error at runtime, p is unchanged.
-
-        hng::nullsafety::notnull p2 = static_cast<int*>(nullptr);
-        // ^ throws a hng::nullsafety::nullptr_error at runtime.
-
-        hng::nullsafety::derefnullchecked<int*> q = nullptr;
-        // ^ ok
-
-        *q = 5;
-        // ^ throws a hng::nullsafety::nullptr_error at runtime.
-
-        std::cout << *p << std::endl;
+        int* raw_ptr = new int(5);
+        HNG_DT_DEFER_FINALLY [&]
+        {
+            std::cout << "finally block" << std::endl;
+            delete raw_ptr;
+            raw_ptr == nullptr;
+        }
+        HNG_DT_TRY [&]
+        {
+            std::cout << "try block" << std::endl;
+        }
+        HNG_DT_END;
+        assert(raw_ptr == nullptr);
+        return 0;
     }
     ```
 
-## Description
+## Examples
 
 ### HNG_DT DEFER_FINALLY/TRY/END macros
 
@@ -105,15 +95,15 @@ HNG_DT_END must be followed by a semicolon.
 The defer block will still be executed if the try block returns early.
 
 ```cpp
-	HNG_DT_DEFER_FINALLY [&]
+    HNG_DT_DEFER_FINALLY [&]
     {
         // executed despite return statement.
     }
-	HNG_DT_TRY [&]
+    HNG_DT_TRY [&]
     {
         return 0;
     }
-	HNG_DT_END;
+    HNG_DT_END;
 ```
 
 ### defer class
@@ -209,6 +199,6 @@ cmake ..
 
 ## Compatibility
 
-Note: This has only been tested on Windows with Visual Studio MSVC compiler with standard C++20 language version.
+This has been tested on Windows with Visual Studio MSVC compiler with standard C++11 language version and above.
 
 PR's are welcome; we're looking for instructions on how to get started using g++, clang; on linux, mac.
