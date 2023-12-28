@@ -1,5 +1,5 @@
 # defer
-C++ header only library for deferred execution and try/catch/finally blocks.
+C++ header only library for deferred execution, useful for resource cleanup, ad-hoc RAII, and propagating exceptions from the deferred code block.
 
 ## Features
 
